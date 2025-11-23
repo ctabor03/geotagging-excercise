@@ -2,65 +2,122 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Villamonte Geotagging Activity</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f7f7f7; }
-    #map { height: 50vh; width: 100%; }
+    /* ==================== GLOBAL ==================== */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      -webkit-tap-highlight-color: transparent; /* Prevent blue highlight on mobile */
+    }
+
+    h3 {
+      font-size: 1.2rem;
+    }
+
+    p {
+      font-size: 0.95rem;
+      line-height: 1.3rem;
+    }
+
+    /* ==================== BOX / CARD ==================== */
     .box {
-      padding: 15px; background: white; margin: 10px;
-      border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 5vw;
+      background: white;
+      margin: 3vw;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
+
+    /* ==================== FORM ELEMENTS ==================== */
     input, button {
-      width: 100%; padding: 12px; margin-top: 8px; font-size: 16px;
-      border-radius: 6px; border: 1px solid #ccc;
+      width: 100%;
+      padding: 14px 16px;
+      margin-top: 10px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
     }
-    button { background: #006eff; color: white; border: none; }
-    button:active { background: #0055cc; }
-    #result { margin-top: 10px; }
+
+    button {
+      background: #006eff;
+      color: white;
+      border: none;
+      font-weight: bold;
+    }
+
+    button:active {
+      background: #0050c1;
+      transform: scale(0.98);
+    }
+
+    /* ==================== MAP AREA ==================== */
+    #map {
+      width: 100%;
+      height: 55vh; /* Better map height for phones */
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    /* SMALL PHONE SUPPORT (e.g., 320px width) */
+    @media (max-width: 400px) {
+      h3 { font-size: 1rem; }
+      p { font-size: 0.85rem; }
+      input, button { font-size: 0.9rem; padding: 12px; }
+      #map { height: 60vh; }
+    }
   </style>
 </head>
 
 <body>
 
+<!-- ==================== TOP CARD ==================== -->
 <div class="box">
   <h3>Barangay Villamonte</h3>
   <p>
-    Permanent marker = <b>STI West Negros University</b>.<br>
-    Click “Add Pin” to place multiple permanent pins inside Villamonte.
+    The map below is clipped to Barangay Villamonte.<br>
+    The permanent pin marks <b>STI West Negros University</b>.<br>
+    Tap <b>Add Pin</b> to place additional permanent pins.
   </p>
 
-  <button onclick="enablePinMode()">Add Pin</button>
+  <button onclick="enablePinMode()">➕ Add Pin</button>
 
   <input id="placeName" placeholder="Name of the place" />
   <input id="placeAddress" placeholder="Address of the place" />
 </div>
 
+<!-- ==================== MAP ==================== -->
 <div id="map"></div>
 
+<!-- ==================== BOTTOM CARD ==================== -->
 <div class="box">
-  <button onclick="submitLocation()">Submit Last Pin</button>
+  <button onclick="submitLocation()">📌 Submit Last Pin</button>
   <div id="result"></div>
 </div>
 
-
+<!-- ==================== JAVASCRIPT ==================== -->
 <script>
-  // ---- MAP ----
+  /* ==================== INIT MAP ==================== */
   const map = L.map("map", {
     zoomControl: true,
     maxBoundsViscosity: 1.0
   }).setView([10.6685, 122.9647], 15);
 
+  /* Satellite Layer */
   L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     { maxZoom: 19 }
   ).addTo(map);
 
-  // ---- APPROX BOUNDARY ----
+  /* ==================== VILLAMONTE BOUNDARY ==================== */
   const villamonteCoords = [
     [10.6760,122.9530],
     [10.6760,122.9770],
@@ -69,36 +126,37 @@
   ];
 
   const villamontePoly = L.polygon(villamonteCoords, {
-    color: "#ff0000",
-    weight: 2,
-    fillOpacity: 0
+    color: "#ff0000", weight: 2, fillOpacity: 0
   }).addTo(map);
 
   map.fitBounds(villamontePoly.getBounds());
   map.setMaxBounds(villamontePoly.getBounds());
 
-  // ---- DARK MASK ----
+  /* ==================== DARK MASK OUTSIDE ==================== */
   const world = [
     [-90, -180], [-90, 180], [90, 180], [90, -180]
   ];
+
   L.polygon([world, villamonteCoords], {
     color: "#000",
-    weight: 1,
-    fillOpacity: 0.6,
+    fillOpacity: 0.60,
     stroke: false
   }).addTo(map);
 
-  // ---- PERMANENT STI WNU PIN ----
+  /* ==================== STI WEST NEGROS UNIVERSITY — PERMANENT MARKER ==================== */
   const stiLat = 10.669309973518835;
   const stiLng = 122.95691342250888;
 
-  const permanentMarker = L.marker([stiLat, stiLng], { draggable: false }).addTo(map);
+  const permanentMarker = L.marker([stiLat, stiLng], {
+    draggable: false
+  }).addTo(map);
+
   permanentMarker.bindPopup("<b>STI West Negros University</b>");
   permanentMarker.on("click", () => permanentMarker.openPopup());
 
-  // ---- MULTIPLE USER PINS ----
-  let userPins = [];       // store all pins
-  let pinMode = false;     // clicking Add Pin enables pin mode
+  /* ==================== MULTIPLE USER PINS ==================== */
+  let userPins = [];
+  let pinMode = false;
 
   function enablePinMode() {
     pinMode = true;
@@ -113,22 +171,20 @@
       return;
     }
 
-    // Create permanent, non-draggable pin
-    const newPin = L.marker(e.latlng, { draggable: false }).addTo(map);
+    // Create permanent pin
+    const pin = L.marker(e.latlng, { draggable: false }).addTo(map);
+    userPins.push(pin);
 
-    // Save to array
-    userPins.push(newPin);
-
-    pinMode = false; // finish pin placement
+    pinMode = false;
   });
 
-  // ---- SUBMIT: submits the LAST pin the user placed ----
+  /* ==================== SUBMISSION ==================== */
   function submitLocation() {
     const name = document.getElementById("placeName").value.trim();
     const address = document.getElementById("placeAddress").value.trim();
 
     if (userPins.length === 0) {
-      alert("Please place at least one pin first.");
+      alert("Place at least one pin first.");
       return;
     }
     if (!name || !address) {
@@ -140,12 +196,12 @@
     const pos = lastPin.getLatLng();
 
     document.getElementById("result").innerHTML = `
-      <b>Submitted (Most Recent Pin):</b><br>
+      <b>Submitted:</b><br>
       <b>Name:</b> ${name}<br>
       <b>Address:</b> ${address}<br>
       <b>Latitude:</b> ${pos.lat.toFixed(6)}<br>
       <b>Longitude:</b> ${pos.lng.toFixed(6)}<br><br>
-      <i>Screenshot this page and send to your teacher.</i>
+      <i>Screenshot this and send to your teacher.</i>
     `;
   }
 </script>
