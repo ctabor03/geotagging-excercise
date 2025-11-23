@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Villamonte Geotagging Activity</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f7f7f7; }
+    #map { height: 50vh; width: 100%; }
+    .box {
+      padding: 15px; background: white; margin: 10px;
+      border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    input, button {
+      width: 100%; padding: 12px; margin-top: 8px; font-size: 16px;
+      border-radius: 6px; border: 1px solid #ccc;
+    }
+    button { background: #006eff; color: white; border: none; }
+    button:active { background: #0055cc; }
+    #result { margin-top: 10px; }
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+  <h3>Barangay Villamonte</h3>
+  <p>
+    Permanent marker = <b>STI West Negros University</b>.<br>
+    Click “Add Pin” to place multiple permanent pins inside Villamonte.
+  </p>
+
+  <button onclick="enablePinMode()">Add Pin</button>
+
+  <input id="placeName" placeholder="Name of the place" />
+  <input id="placeAddress" placeholder="Address of the place" />
+</div>
+
+<div id="map"></div>
+
+<div class="box">
+  <button onclick="submitLocation()">Submit Last Pin</button>
+  <div id="result"></div>
+</div>
+
+
+<script>
+  // ---- MAP ----
+  const map = L.map("map", {
+    zoomControl: true,
+    maxBoundsViscosity: 1.0
+  }).setView([10.6685, 122.9647], 15);
+
+  L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    { maxZoom: 19 }
+  ).addTo(map);
+
+  // ---- APPROX BOUNDARY ----
+  const villamonteCoords = [
+    [10.6760,122.9530],
+    [10.6760,122.9770],
+    [10.6590,122.9770],
+    [10.6590,122.9530]
+  ];
+
+  const villamontePoly = L.polygon(villamonteCoords, {
+    color: "#ff0000",
+    weight: 2,
+    fillOpacity: 0
+  }).addTo(map);
+
+  map.fitBounds(villamontePoly.getBounds());
+  map.setMaxBounds(villamontePoly.getBounds());
+
+  // ---- DARK MASK ----
+  const world = [
+    [-90, -180], [-90, 180], [90, 180], [90, -180]
+  ];
+  L.polygon([world, villamonteCoords], {
+    color: "#000",
+    weight: 1,
+    fillOpacity: 0.6,
+    stroke: false
+  }).addTo(map);
+
+  // ---- PERMANENT STI WNU PIN ----
+  const stiLat = 10.669309973518835;
+  const stiLng = 122.95691342250888;
+
+  const permanentMarker = L.marker([stiLat, stiLng], { draggable: false }).addTo(map);
+  permanentMarker.bindPopup("<b>STI West Negros University</b>");
+  permanentMarker.on("click", () => permanentMarker.openPopup());
+
+  // ---- MULTIPLE USER PINS ----
+  let userPins = [];       // store all pins
+  let pinMode = false;     // clicking Add Pin enables pin mode
+
+  function enablePinMode() {
+    pinMode = true;
+    alert("Tap inside Barangay Villamonte to place a pin.");
+  }
+
+  map.on("click", function(e) {
+    if (!pinMode) return;
+
+    if (!villamontePoly.getBounds().contains(e.latlng)) {
+      alert("Please tap inside Villamonte.");
+      return;
+    }
+
+    // Create permanent, non-draggable pin
+    const newPin = L.marker(e.latlng, { draggable: false }).addTo(map);
+
+    // Save to array
+    userPins.push(newPin);
+
+    pinMode = false; // finish pin placement
+  });
+
+  // ---- SUBMIT: submits the LAST pin the user placed ----
+  function submitLocation() {
+    const name = document.getElementById("placeName").value.trim();
+    const address = document.getElementById("placeAddress").value.trim();
+
+    if (userPins.length === 0) {
+      alert("Please place at least one pin first.");
+      return;
+    }
+    if (!name || !address) {
+      alert("Enter both the name and address.");
+      return;
+    }
+
+    const lastPin = userPins[userPins.length - 1];
+    const pos = lastPin.getLatLng();
+
+    document.getElementById("result").innerHTML = `
+      <b>Submitted (Most Recent Pin):</b><br>
+      <b>Name:</b> ${name}<br>
+      <b>Address:</b> ${address}<br>
+      <b>Latitude:</b> ${pos.lat.toFixed(6)}<br>
+      <b>Longitude:</b> ${pos.lng.toFixed(6)}<br><br>
+      <i>Screenshot this page and send to your teacher.</i>
+    `;
+  }
+</script>
+
+</body>
+</html>
