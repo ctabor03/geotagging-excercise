@@ -5,8 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Villamonte Geotagging Activity</title>
 
+  <!-- Leaflet Core -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- Fullscreen Plugin -->
+  <link
+    rel="stylesheet"
+    href="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css"
+  />
+  <script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js"></script>
 
   <style>
     /* ==================== GLOBAL MOBILE-FRIENDLY RESET ==================== */
@@ -19,7 +27,7 @@
     }
 
     body {
-      padding-bottom: env(safe-area-inset-bottom); /* iPhone safe-area fix */
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
     h3 {
@@ -37,7 +45,7 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
-    /* ==================== INPUTS + BUTTONS (Mobile Optimized) ==================== */
+    /* ==================== INPUTS + BUTTONS ==================== */
     input, button {
       width: 100%;
       padding: 14px 16px;
@@ -68,13 +76,13 @@
     /* ==================== MAP AREA ==================== */
     #map {
       width: 100%;
-      height: 55vh;        /* Ideal height for mobile */
+      height: 55vh;
       border-radius: 10px;
       margin: 12px 0;
       overflow: hidden;
     }
 
-    /* ==================== LABEL STYLE ==================== */
+    /* ==================== PERMANENT LABEL STYLE ==================== */
     .pin-label {
       background: rgba(255,255,255,0.95);
       color: #000;
@@ -87,7 +95,7 @@
       white-space: nowrap;
     }
 
-    /* ==================== RESPONSIVE MOBILE TUNING ==================== */
+    /* ==================== MOBILE RESPONSIVE TUNING ==================== */
     @media (max-width: 430px) {
       h3 { font-size: 1.1rem; }
       input, button { font-size: 0.95rem; padding: 12px; }
@@ -98,6 +106,21 @@
       h3 { font-size: 1rem; }
       input, button { font-size: 0.85rem; padding: 10px; }
       .box { padding: 12px; margin: 8px; }
+    }
+
+    /* ==================== FULLSCREEN BUTTON STYLING ==================== */
+    .leaflet-control-fullscreen-button {
+      background: white !important;
+      border-radius: 8px !important;
+      width: 36px !important;
+      height: 36px !important;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25) !important;
+      border: none !important;
+    }
+
+    .leaflet-container:fullscreen {
+      width: 100vw !important;
+      height: 100vh !important;
     }
   </style>
 </head>
@@ -123,18 +146,23 @@
 
 <!-- ==================== JAVASCRIPT ==================== -->
 <script>
-  /* INIT MAP */
+  /* ==================== INIT MAP ==================== */
   const map = L.map("map", {
     zoomControl: true,
+    fullscreenControl: true,         // FULLSCREEN ENABLED
+    fullscreenControlOptions: {
+      position: 'topright'
+    },
     maxBoundsViscosity: 1.0
   }).setView([10.6685, 122.9647], 15);
 
+  /* Satellite Layer */
   L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     { maxZoom: 19 }
   ).addTo(map);
 
-  /* VILLAMONTE BOUNDARY */
+  /* ==================== VILLAMONTE BOUNDARY ==================== */
   const villamonteCoords = [
     [10.6760,122.9530],
     [10.6760,122.9770],
@@ -149,7 +177,7 @@
   map.fitBounds(villamontePoly.getBounds());
   map.setMaxBounds(villamontePoly.getBounds());
 
-  /* DARK MASK OUTSIDE */
+  /* ==================== DARK MASK OUTSIDE ==================== */
   const world = [
     [-90, -180], [-90, 180], [90, 180], [90, -180]
   ];
@@ -160,7 +188,7 @@
     stroke: false
   }).addTo(map);
 
-  /* PERMANENT STI WNU PIN */
+  /* ==================== PERMANENT STI WEST NEGROS UNIVERSITY PIN ==================== */
   const stiLat = 10.669309973518835;
   const stiLng = 122.95691342250888;
 
@@ -171,7 +199,7 @@
     { permanent: true, direction: "top", offset: [0,-10], className: "pin-label" }
   );
 
-  /* USER PINS */
+  /* ==================== USER PINS ==================== */
   let userPins = [];
   let pinMode = false;
 
@@ -194,7 +222,7 @@
     pinMode = false;
   });
 
-  /* SUBMIT BUTTON → Create label on the pin */
+  /* ==================== SUBMIT BUTTON — LABEL PIN ==================== */
   function submitLocation() {
     const name = document.getElementById("placeName").value.trim();
     const address = document.getElementById("placeAddress").value.trim();
@@ -204,14 +232,14 @@
       return;
     }
     if (!name) {
-      alert("Enter a name for the pin.");
+      alert("Enter the name of the place.");
       return;
     }
 
     const lastPin = userPins[userPins.length - 1];
     const pos = lastPin.getLatLng();
 
-    /* Label the pin permanently */
+    /* Add readable label */
     lastPin.bindTooltip(
       `<b>${name}</b>`,
       {
@@ -224,9 +252,9 @@
 
     document.getElementById("result").innerHTML = `
       <b>Label Added:</b><br>
-      ${name}<br>
-      Lat: ${pos.lat.toFixed(6)}<br>
-      Lng: ${pos.lng.toFixed(6)}<br>
+      <b>${name}</b><br>
+      Latitude: ${pos.lat.toFixed(6)}<br>
+      Longitude: ${pos.lng.toFixed(6)}<br>
     `;
 
     document.getElementById("placeName").value = "";
