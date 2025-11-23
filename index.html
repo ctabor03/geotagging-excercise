@@ -9,74 +9,95 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
-    /* ==================== GLOBAL ==================== */
-    body {
+    /* ==================== GLOBAL MOBILE-FRIENDLY RESET ==================== */
+    html, body {
       margin: 0;
+      padding: 0;
+      background: #f2f2f2;
       font-family: Arial, sans-serif;
-      background: #f7f7f7;
       -webkit-tap-highlight-color: transparent;
     }
 
+    body {
+      padding-bottom: env(safe-area-inset-bottom); /* iPhone safe-area fix */
+    }
+
     h3 {
-      font-size: 1.2rem;
-    }
-
-    /* ==================== BOX / CARD ==================== */
-    .box {
-      padding: 5vw;
-      background: white;
-      margin: 3vw;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-
-    /* ==================== FORM ELEMENTS ==================== */
-    input, button {
-      width: 100%;
-      padding: 14px 16px;
-      margin-top: 10px;
-      font-size: 1rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-    }
-
-    button {
-      background: #006eff;
-      color: white;
-      border: none;
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
       font-weight: bold;
     }
 
+    /* ==================== CARD BOXES ==================== */
+    .box {
+      padding: 16px;
+      margin: 12px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    /* ==================== INPUTS + BUTTONS (Mobile Optimized) ==================== */
+    input, button {
+      width: 100%;
+      padding: 14px 16px;
+      margin-top: 12px;
+      font-size: 1rem;
+      border-radius: 10px;
+      border: 1px solid #cfcfcf;
+      box-sizing: border-box;
+    }
+
+    input {
+      background: #fafafa;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+      border: none;
+      transition: 0.15s ease;
+    }
+
     button:active {
-      background: #0050c1;
-      transform: scale(0.98);
+      background: #005fcc;
+      transform: scale(0.97);
     }
 
     /* ==================== MAP AREA ==================== */
     #map {
       width: 100%;
-      height: 55vh;
-      border-radius: 8px;
+      height: 55vh;        /* Ideal height for mobile */
+      border-radius: 10px;
+      margin: 12px 0;
       overflow: hidden;
-      margin-bottom: 10px;
     }
 
     /* ==================== LABEL STYLE ==================== */
     .pin-label {
       background: rgba(255,255,255,0.95);
       color: #000;
-      padding: 3px 6px;
-      border-radius: 4px;
-      font-size: 0.85rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.9rem;
       font-weight: bold;
       border: 1px solid #333;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      white-space: nowrap;
     }
 
-    @media (max-width: 400px) {
-      h3 { font-size: 1rem; }
-      input, button { font-size: 0.9rem; padding: 12px; }
+    /* ==================== RESPONSIVE MOBILE TUNING ==================== */
+    @media (max-width: 430px) {
+      h3 { font-size: 1.1rem; }
+      input, button { font-size: 0.95rem; padding: 12px; }
       #map { height: 60vh; }
+    }
+
+    @media (max-width: 360px) {
+      h3 { font-size: 1rem; }
+      input, button { font-size: 0.85rem; padding: 10px; }
+      .box { padding: 12px; margin: 8px; }
     }
   </style>
 </head>
@@ -86,9 +107,7 @@
 <!-- ==================== TOP CARD ==================== -->
 <div class="box">
   <h3>Barangay Villamonte</h3>
-
   <button onclick="enablePinMode()">➕ Add Pin</button>
-
   <input id="placeName" placeholder="Name of the place" />
   <input id="placeAddress" placeholder="Address of the place" />
 </div>
@@ -104,19 +123,18 @@
 
 <!-- ==================== JAVASCRIPT ==================== -->
 <script>
-  /* ==================== INIT MAP ==================== */
+  /* INIT MAP */
   const map = L.map("map", {
     zoomControl: true,
     maxBoundsViscosity: 1.0
   }).setView([10.6685, 122.9647], 15);
 
-  /* Satellite Layer */
   L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     { maxZoom: 19 }
   ).addTo(map);
 
-  /* ==================== VILLAMONTE BOUNDARY ==================== */
+  /* VILLAMONTE BOUNDARY */
   const villamonteCoords = [
     [10.6760,122.9530],
     [10.6760,122.9770],
@@ -131,7 +149,7 @@
   map.fitBounds(villamontePoly.getBounds());
   map.setMaxBounds(villamontePoly.getBounds());
 
-  /* ==================== DARK MASK OUTSIDE ==================== */
+  /* DARK MASK OUTSIDE */
   const world = [
     [-90, -180], [-90, 180], [90, 180], [90, -180]
   ];
@@ -142,7 +160,7 @@
     stroke: false
   }).addTo(map);
 
-  /* ==================== PERMANENT STI WEST NEGROS UNIVERSITY PIN ==================== */
+  /* PERMANENT STI WNU PIN */
   const stiLat = 10.669309973518835;
   const stiLng = 122.95691342250888;
 
@@ -153,7 +171,7 @@
     { permanent: true, direction: "top", offset: [0,-10], className: "pin-label" }
   );
 
-  /* ==================== USER PINS ==================== */
+  /* USER PINS */
   let userPins = [];
   let pinMode = false;
 
@@ -176,7 +194,7 @@
     pinMode = false;
   });
 
-  /* ==================== SUBMIT BUTTON — LABEL PIN ==================== */
+  /* SUBMIT BUTTON → Create label on the pin */
   function submitLocation() {
     const name = document.getElementById("placeName").value.trim();
     const address = document.getElementById("placeAddress").value.trim();
@@ -186,30 +204,29 @@
       return;
     }
     if (!name) {
-      alert("Enter the name of the place.");
+      alert("Enter a name for the pin.");
       return;
     }
 
     const lastPin = userPins[userPins.length - 1];
     const pos = lastPin.getLatLng();
 
-    /* Add readable permanent label */
+    /* Label the pin permanently */
     lastPin.bindTooltip(
       `<b>${name}</b>`,
       {
         permanent: true,
         direction: "top",
-        offset: [0, -10],
+        offset: [0,-10],
         className: "pin-label"
       }
     ).openTooltip();
 
     document.getElementById("result").innerHTML = `
       <b>Label Added:</b><br>
-      <b>${name}</b><br>
-      <b>Latitude:</b> ${pos.lat.toFixed(6)}<br>
-      <b>Longitude:</b> ${pos.lng.toFixed(6)}<br>
-      Label is now visible on the map.
+      ${name}<br>
+      Lat: ${pos.lat.toFixed(6)}<br>
+      Lng: ${pos.lng.toFixed(6)}<br>
     `;
 
     document.getElementById("placeName").value = "";
