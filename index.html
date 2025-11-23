@@ -1,3 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Villamonte Geotagging Activity</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    /* ==================== GLOBAL ==================== */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    h3 {
+      font-size: 1.2rem;
+    }
+
+    /* ==================== BOX / CARD ==================== */
+    .box {
+      padding: 5vw;
+      background: white;
+      margin: 3vw;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    /* ==================== FORM ELEMENTS ==================== */
+    input, button {
+      width: 100%;
+      padding: 14px 16px;
+      margin-top: 10px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    button {
+      background: #006eff;
+      color: white;
+      border: none;
+      font-weight: bold;
+    }
+
+    button:active {
+      background: #0050c1;
+      transform: scale(0.98);
+    }
+
+    /* ==================== MAP AREA ==================== */
+    #map {
+      width: 100%;
+      height: 55vh;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    /* ==================== LABEL STYLE ==================== */
+    .pin-label {
+      background: rgba(255,255,255,0.95);
+      color: #000;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      border: 1px solid #333;
+    }
+
+    @media (max-width: 400px) {
+      h3 { font-size: 1rem; }
+      input, button { font-size: 0.9rem; padding: 12px; }
+      #map { height: 60vh; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ==================== TOP CARD ==================== -->
+<div class="box">
+  <h3>Barangay Villamonte</h3>
+
+  <button onclick="enablePinMode()">➕ Add Pin</button>
+
+  <input id="placeName" placeholder="Name of the place" />
+  <input id="placeAddress" placeholder="Address of the place" />
+</div>
+
+<!-- ==================== MAP ==================== -->
+<div id="map"></div>
+
+<!-- ==================== BOTTOM CARD ==================== -->
+<div class="box">
+  <button onclick="submitLocation()">📌 Submit Last Pin</button>
+  <div id="result"></div>
+</div>
+
+<!-- ==================== JAVASCRIPT ==================== -->
 <script>
   /* ==================== INIT MAP ==================== */
   const map = L.map("map", {
@@ -37,20 +142,19 @@
     stroke: false
   }).addTo(map);
 
-  /* ==================== STI WEST NEGROS UNIVERSITY — PERMANENT MARKER ==================== */
+  /* ==================== PERMANENT STI WEST NEGROS UNIVERSITY PIN ==================== */
   const stiLat = 10.669309973518835;
   const stiLng = 122.95691342250888;
 
-  const permanentMarker = L.marker([stiLat, stiLng], {
-    draggable: false
-  }).addTo(map);
+  const permanentMarker = L.marker([stiLat, stiLng], { draggable: false }).addTo(map);
 
-  permanentMarker.bindPopup("<b>STI West Negros University</b>");
-  permanentMarker.on("click", () => permanentMarker.openPopup());
+  permanentMarker.bindTooltip(
+    "<b>STI West Negros University</b>",
+    { permanent: true, direction: "top", offset: [0,-10], className: "pin-label" }
+  );
 
-  /* ==================== MULTIPLE USER PINS ==================== */
-  let userPins = [];     // final permanent pins
-  let tempPin = null;    // temporary pin before submit
+  /* ==================== USER PINS ==================== */
+  let userPins = [];
   let pinMode = false;
 
   function enablePinMode() {
@@ -66,48 +170,52 @@
       return;
     }
 
-    // Remove previous temp pin if exists
-    if (tempPin) map.removeLayer(tempPin);
-
-    // Create temporary pin
-    tempPin = L.marker(e.latlng, { draggable: false }).addTo(map);
+    const pin = L.marker(e.latlng, { draggable: false }).addTo(map);
+    userPins.push(pin);
 
     pinMode = false;
   });
 
-  /* ==================== SUBmission ==================== */
+  /* ==================== SUBMIT BUTTON — LABEL PIN ==================== */
   function submitLocation() {
     const name = document.getElementById("placeName").value.trim();
     const address = document.getElementById("placeAddress").value.trim();
 
-    if (!tempPin) {
-      alert("Please place a pin first.");
+    if (userPins.length === 0) {
+      alert("Place at least one pin first.");
       return;
     }
-    if (!name || !address) {
-      alert("Enter both the name and address.");
+    if (!name) {
+      alert("Enter the name of the place.");
       return;
     }
 
-    const pos = tempPin.getLatLng();
+    const lastPin = userPins[userPins.length - 1];
+    const pos = lastPin.getLatLng();
 
-    /* Convert temp pin → permanent labeled pin */
-    tempPin.bindPopup(`<b>${name}</b><br>${address}<br>
-      <small>${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}</small>`);
+    /* Add readable permanent label */
+    lastPin.bindTooltip(
+      `<b>${name}</b>`,
+      {
+        permanent: true,
+        direction: "top",
+        offset: [0, -10],
+        className: "pin-label"
+      }
+    ).openTooltip();
 
-    tempPin.on("click", () => tempPin.openPopup());
-
-    userPins.push(tempPin);
-
-    // Show confirmation text below
     document.getElementById("result").innerHTML = `
-      <b>Pin Saved:</b> ${name}<br>
-      <i>Tap the marker on the map to view its label.</i>
+      <b>Label Added:</b><br>
+      <b>${name}</b><br>
+      <b>Latitude:</b> ${pos.lat.toFixed(6)}<br>
+      <b>Longitude:</b> ${pos.lng.toFixed(6)}<br>
+      Label is now visible on the map.
     `;
 
-    // Reset form + tempPin
-    tempPin = null;
     document.getElementById("placeName").value = "";
     document.getElementById("placeAddress").value = "";
   }
 </script>
+
+</body>
+</html>
