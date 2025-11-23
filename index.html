@@ -95,19 +95,6 @@
       white-space: nowrap;
     }
 
-    /* ==================== MOBILE RESPONSIVE TUNING ==================== */
-    @media (max-width: 430px) {
-      h3 { font-size: 1.1rem; }
-      input, button { font-size: 0.95rem; padding: 12px; }
-      #map { height: 60vh; }
-    }
-
-    @media (max-width: 360px) {
-      h3 { font-size: 1rem; }
-      input, button { font-size: 0.85rem; padding: 10px; }
-      .box { padding: 12px; margin: 8px; }
-    }
-
     /* ==================== FULLSCREEN BUTTON STYLING ==================== */
     .leaflet-control-fullscreen-button {
       background: white !important;
@@ -130,29 +117,30 @@
 <!-- ==================== TOP CARD ==================== -->
 <div class="box">
   <h3>Barangay Villamonte</h3>
+
   <button onclick="enablePinMode()">➕ Add Pin</button>
+
   <input id="placeName" placeholder="Name of the place" />
   <input id="placeAddress" placeholder="Address of the place" />
+
+  <!-- ✔ Submit button moved here -->
+  <button onclick="submitLocation()">📌 Submit Last Pin</button>
+
+  <div id="result" style="margin-top:10px;"></div>
 </div>
 
 <!-- ==================== MAP ==================== -->
 <div id="map"></div>
 
-<!-- ==================== BOTTOM CARD ==================== -->
-<div class="box">
-  <button onclick="submitLocation()">📌 Submit Last Pin</button>
-  <div id="result"></div>
-</div>
+<!-- (Removed the bottom card — no longer needed) -->
 
 <!-- ==================== JAVASCRIPT ==================== -->
 <script>
   /* ==================== INIT MAP ==================== */
   const map = L.map("map", {
     zoomControl: true,
-    fullscreenControl: true,         // FULLSCREEN ENABLED
-    fullscreenControlOptions: {
-      position: 'topright'
-    },
+    fullscreenControl: true,
+    fullscreenControlOptions: { position: 'topright' },
     maxBoundsViscosity: 1.0
   }).setView([10.6685, 122.9647], 15);
 
@@ -177,7 +165,7 @@
   map.fitBounds(villamontePoly.getBounds());
   map.setMaxBounds(villamontePoly.getBounds());
 
-  /* ==================== DARK MASK OUTSIDE ==================== */
+  /* Dark Mask */
   const world = [
     [-90, -180], [-90, 180], [90, 180], [90, -180]
   ];
@@ -188,31 +176,30 @@
     stroke: false
   }).addTo(map);
 
-  /* ==================== PERMANENT STI WEST NEGROS UNIVERSITY PIN ==================== */
-  const stiLat = 10.669309973518835;
-  const stiLng = 122.95691342250888;
-
-  const permanentMarker = L.marker([stiLat, stiLng], { draggable: false }).addTo(map);
+  /* ==================== STI WNU PERMANENT PIN ==================== */
+  const permanentMarker = L.marker([10.669309973518835, 122.95691342250888], {
+    draggable: false,
+  }).addTo(map);
 
   permanentMarker.bindTooltip(
     "<b>STI West Negros University</b>",
     { permanent: true, direction: "top", offset: [0,-10], className: "pin-label" }
   );
 
-  /* ==================== USER PINS ==================== */
+  /* ==================== USER PIN LOGIC ==================== */
   let userPins = [];
   let pinMode = false;
 
   function enablePinMode() {
     pinMode = true;
-    alert("Tap inside Barangay Villamonte to place a pin.");
+    alert("Tap anywhere INSIDE Barangay Villamonte to place a pin.");
   }
 
   map.on("click", function(e) {
     if (!pinMode) return;
 
     if (!villamontePoly.getBounds().contains(e.latlng)) {
-      alert("Please tap inside Villamonte.");
+      alert("Please place your pin INSIDE Barangay Villamonte.");
       return;
     }
 
@@ -222,39 +209,31 @@
     pinMode = false;
   });
 
-  /* ==================== SUBMIT BUTTON — LABEL PIN ==================== */
+  /* ==================== SUBMIT BUTTON — LABEL LAST PIN ==================== */
   function submitLocation() {
     const name = document.getElementById("placeName").value.trim();
     const address = document.getElementById("placeAddress").value.trim();
 
     if (userPins.length === 0) {
-      alert("Place at least one pin first.");
+      alert("Place a pin first!");
       return;
     }
     if (!name) {
-      alert("Enter the name of the place.");
+      alert("Please enter a name for the pin.");
       return;
     }
 
     const lastPin = userPins[userPins.length - 1];
     const pos = lastPin.getLatLng();
 
-    /* Add readable label */
     lastPin.bindTooltip(
       `<b>${name}</b>`,
-      {
-        permanent: true,
-        direction: "top",
-        offset: [0,-10],
-        className: "pin-label"
-      }
+      { permanent: true, direction: "top", offset: [0,-10], className: "pin-label" }
     ).openTooltip();
 
     document.getElementById("result").innerHTML = `
-      <b>Label Added:</b><br>
-      <b>${name}</b><br>
-      Latitude: ${pos.lat.toFixed(6)}<br>
-      Longitude: ${pos.lng.toFixed(6)}<br>
+      <b>Saved:</b> ${name}<br>
+      Lat: ${pos.lat.toFixed(6)}, Lng: ${pos.lng.toFixed(6)}
     `;
 
     document.getElementById("placeName").value = "";
